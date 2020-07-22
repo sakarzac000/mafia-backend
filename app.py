@@ -23,6 +23,12 @@ mafia_count = 0
 current_number_of_players = 0
 current_mafia_count = 0
 game_going = False
+ip_list = []
+roles = {}
+mafia_number = 1
+villager_number = 1
+
+
 game = Game()
 town = game.add_faction(Town())
 mafia = game.add_faction(Mafia("Mafia"))
@@ -175,17 +181,14 @@ def initialize_game():
     current_number_of_players = town_count + mafia_count
     current_mafia_count = mafia_count
 
-
-
-
-
-
-
-    # Guest1 = game.add_player("Doctor", Villager(town))
-    # Guest2 = game.add_player("Cop", Cop(town))
-    # Guest3 = game.add_player("Vigilante", Vigilante(town))
-    # Guest4 = game.add_player("Godfather", Godfather(mafia))
-    # Guest5 = game.add_player("Goon", Goon(mafia))
+    # Guest1 = game.add_player("Villager 1", Villager(town))
+    # Guest2 = game.add_player("Villager 2", Villager(town))
+    # Guest3 = game.add_player("Villager 3", Villager(town))
+    # Guest4 = game.add_player("Villager 4", Villager(town))
+    # Guest5 = game.add_player("Villager 5", Villager(town))
+    # Guest7 = game.add_player("Mafia 1", Goon(mafia))
+    # Guest8 = game.add_player("Mafia 2", Goon(mafia))
+    # Guest9 = game.add_player("Mafia 3", Goon(mafia))
 
     # night0 = Night(0)
     # night0.add_action(Protect(aDoctor, aCop))
@@ -198,7 +201,7 @@ def initialize_game():
 
     # return jsonify(str(game.log.phase(night0)))
 
-    return jsonify(f"There are {mafia_count} mafia and {town_count} townspeople")
+    return jsonify(f"There are {mafia_count} mafia and {town_count} townspeople. The game has now started.")
 
 @app.route('/game/get_role', methods=['GET'])
 def get_role():
@@ -206,7 +209,11 @@ def get_role():
     global mafia_count
     global current_number_of_players
     global current_mafia_count
+    global roles
+    global mafia_number
+    global villager_number
 
+    ip_address = request.remote_addr
 
     if game_going == True:
 
@@ -219,28 +226,47 @@ def get_role():
             if random_number < current_odds:
                 current_mafia_count -= 1
                 current_number_of_players -= 1
+                roles[ip_address]['role'] = 'mafia'
+                mafia_number = 0
+
                 print(f'{current_mafia_count} mafia & {current_number_of_players} players')
+                roles[ip_address]['player_link'] = game.add_player(f"Mafia {mafia_number}", Goon(mafia))
+                mafia_number += 1
+                print(roles)
                 return jsonify("You are Mafia") 
             else:
                 current_number_of_players -= 1
+                roles[ip_address]['role'] = 'villager'
                 print(f'{current_mafia_count} mafia & {current_number_of_players} players')
+                roles[ip_address]['player_link'] = game.add_player(f"Villager {villager_number}", Villager(town))
+                print(roles)
+    
                 return jsonify("You are Villager")
         else:
             return jsonify("Out of Players!")
     else:
         return jsonify("Game is not going!")
 
-
-
 @app.route('/game/enter', methods=['POST'])
 def enter_game():
     global number_of_players
+    global ip_list
+    global roles
+
+    ip_address = request.remote_addr
+    print(ip_address)
 
     if game_going == True:
         return jsonify("There is a game going!")
 
+    # if (ip_address in ip_list):
+    #     return jsonify("You are already in the game!")
+
     number_of_players += 1
     print(number_of_players)
+
+    ip_list.append(ip_address)
+    roles[ip_address] = {}
     return jsonify(f"Entered! You are player #{number_of_players}")
 
 @app.route('/game/finish', methods=['DELETE'])
@@ -248,24 +274,36 @@ def finish_game():
     global game_going
     global number_of_players
     global mafia_count
+    global ip_list
 
     number_of_players = 0
     mafia_count = 0
     game_going = False
+    ip_list = []
     return jsonify('Game is finished!')
 
 @app.route('/game/exit', methods=['POST'])
 def exit_game():
     global number_of_players
     global game_going
+    global ip_list
+
+    ip_address = request.remote_addr
+    print(ip_address)
 
     if game_going == True:
         return jsonify("There is a game going! Finish it!")
+    if (ip_address not in ip_list):
+        return jsonify("You are not in this match!")
     if number_of_players <= 0:
         return jsonify("There are no players in the match!")
 
+
     number_of_players -= 1    
     print(number_of_players)
+    ip_address = request.remote_addr
+    print(ip_address)
+    ip_list.remove(ip_address)
     return jsonify("Exited!")
 
 @app.route('/game/reset_players', methods=['DELETE'])
@@ -281,6 +319,7 @@ def reset_game():
 def ping_game():
     global number_of_players
     global game_going
+    global ip_list
 
     if not game_going:
         if number_of_players % 2 == 0:
@@ -294,8 +333,12 @@ def ping_game():
                 return jsonify('Ready to start!')
         
     else:
-        return jsonify('Game going!')
+        ip_address = request.remote_addr
 
+        if (ip_address not in ip_list):
+            return jsonify('You are not in this game!')
+        else:
+            return jsonify('Pinged!')
 
 
 if __name__ == "__main__":
