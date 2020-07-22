@@ -275,11 +275,13 @@ def finish_game():
     global number_of_players
     global mafia_count
     global ip_list
+    global roles
 
     number_of_players = 0
     mafia_count = 0
     game_going = False
     ip_list = []
+    roles = {}
     return jsonify('Game is finished!')
 
 @app.route('/game/exit', methods=['POST'])
