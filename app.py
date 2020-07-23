@@ -290,8 +290,10 @@ def exit_game():
     global game_going
     global ip_list
 
-    ip_address = request.remote_addr
-    print(ip_address)
+    # ip_address = request.remote_addr
+    # print(ip_address)
+
+    # ip_list.remove(ip_address)
 
     if game_going == True:
         return jsonify("There is a game going! Finish it!")
