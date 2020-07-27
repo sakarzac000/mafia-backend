@@ -169,13 +169,13 @@ def initialize_game():
     global current_number_of_players
     global current_mafia_count
 
-    if number_of_players % 2 == 0 or number_of_players < 7:
-        return jsonify(
-            'You must have an odd number of players and there must be at least 7'
-            )
+    # if number_of_players % 2 == 0 or number_of_players < 7:
+    #     return jsonify(
+    #         'You must have an odd number of players and there must be at least 7'
+    #         )
 
     game_going = True    
-    mafia_count = math.floor(number_of_players / 3)
+    mafia_count = math.ceil(number_of_players / 2.5)
     town_count = number_of_players - mafia_count
 
     current_number_of_players = town_count + mafia_count
@@ -230,7 +230,6 @@ def get_role():
                 mafia_number = 0
 
                 print(f'{current_mafia_count} mafia & {current_number_of_players} players')
-                roles[ip_address]['player_link'] = game.add_player(f"Mafia {mafia_number}", Goon(mafia))
                 mafia_number += 1
                 print(roles)
                 return jsonify("You are Mafia") 
@@ -238,7 +237,6 @@ def get_role():
                 current_number_of_players -= 1
                 roles[ip_address]['role'] = 'villager'
                 print(f'{current_mafia_count} mafia & {current_number_of_players} players')
-                roles[ip_address]['player_link'] = game.add_player(f"Villager {villager_number}", Villager(town))
                 print(roles)
     
                 return jsonify("You are Villager")
@@ -326,15 +324,16 @@ def ping_game():
     global ip_list
 
     if not game_going:
-        if number_of_players % 2 == 0:
-            print(number_of_players)
-            return jsonify('Odd Number Required')
-        else:
-            if number_of_players < 7:
-                print(number_of_players)
-                return jsonify('Not enough players')
-            else:
-                return jsonify('Ready to start!')
+        # if number_of_players % 2 == 0:
+        #     print(number_of_players)
+        #     return jsonify('Odd Number Required')
+        # else:
+        #     if number_of_players < 7:
+        #         print(number_of_players)
+        #         return jsonify('Not enough players')
+        #     else:
+        #         return jsonify('Ready to start!')
+        return jsonify('Ready to start!')
         
     else:
         ip_address = request.remote_addr
@@ -344,6 +343,16 @@ def ping_game():
         else:
             return jsonify('Pinged!')
 
+@app.route('/game/player_count', methods=['GET'])
+def get_players():
+    global number_of_players
+    global ip_list
+
+    return jsonify(ip_list)
+
+@app.route('/game/night', methods=['POST'])
+def night():
+    return jsonify('Night')
 
 if __name__ == "__main__":
     app.run(debug=True)
